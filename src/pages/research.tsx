@@ -6,7 +6,7 @@ const Research: React.FC = () => {
     return (
         <div>
         <Head>
-            <title>praisethemoon's research</title>
+            <title>praisethemoon&apos;s research</title>
         </Head>
             <div className="striped1 hero bg-base-100 py-20">
                 <div>

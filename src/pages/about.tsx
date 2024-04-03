@@ -1,6 +1,7 @@
 import React from 'react';
 import getUnicodeFlagIcon from 'country-flag-icons/unicode'
 import Head from 'next/head';
+import Image from 'next/image';
 
 const About: React.FC = () => {
     return (
@@ -25,7 +26,7 @@ const About: React.FC = () => {
             <div className="flex flex-1">
                 <div className='hero bg-base-200 py-20 w-200'>
                     <div className="card card-side bg-base-100 shadow-xl">
-                        <figure><img src="/images/me.png" alt="Movie" /></figure>
+                        <figure><Image src="/images/me.png" alt="Movie" width={200} height={200}/></figure>
                         <div className="card-body max-w-xl">
                             <h2 className="card-title">About:</h2>
                             <p>Hi! My name is Soulaymen Chouri, I am a Software Engineer and Data Scientist, my projects vary from Data Science, Software Engineering, Programming Language, Fullstack development, Video Game Development and more.

@@ -26,7 +26,7 @@ const BlogPosts: React.FC<{ posts: BlogPost[] }> = ({ posts }) => {
 
         <div>
             <Head>
-                <title>praisethemoon's blog</title>
+                <title>praisethemoon&apos;s blog</title>
             </Head>
             <div className="striped1 hero bg-base-100 py-20">
                 <div>
