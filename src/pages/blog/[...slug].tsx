@@ -3,7 +3,6 @@ import { serialize } from 'next-mdx-remote/serialize';
 import { MDXRemote } from 'next-mdx-remote';
 import fs from 'fs';
 import path from 'path';
-import { BlogPost } from '..';
 import MDXComponents from '@/components/MDXComponents';
 import Link from 'next/link';
 import { FaRegNewspaper } from 'react-icons/fa';

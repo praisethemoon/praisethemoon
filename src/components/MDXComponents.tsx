@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
 import CodeHighlight from './CodeHighlight';
-import { language } from 'gray-matter';
 // Optionally import a style for the syntax highlighter
 // import { dark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
