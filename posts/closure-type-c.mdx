@@ -1,0 +1,198 @@
+---
+title: "Closures Implementation in Type-V"
+date: "2024-03-18"
+tags:
+- Type-C
+- Type-V
+- Bytecode
+---
+
+Given the recent progress in the Type-V project, I have been working on implementing closures in Type-V, in a way that is non-intruisive to the current bytecode and least possible overhead. This article will cover the current implementation of closures in Type-V.
+
+{/* excerpt */}
+
+## Regular Functions
+
+Before we dive into the details, allow me to showcase how regular functions are currently implemented in Type-C.
+First and foremost, a limit of 255 arguments is set for all functions. That is becaues arguments are passed through registers, and no stack is involved. The stack is only used to communicate with the FFI (at this time of writing).
+Bytecode level, function is only referenced by its address within the code segment. So when a function calls another function, it allocates new execution frame and jumps to the address of the callee function. 
+
+Let's review how a function state is modeled:
+
+```c
+/**
+ * @brief A function state is an object that holds the state of a function. Since function arguments are passed
+ * through registers, the function state holds the registers that are used by the function.
+ * When a function calls another, it allocates the next function state using fn_init_state, switches the active
+ * function state to the new one, using fn_call (automatically loads .next), and when the function returns, it
+ * deallocates the current function state and gets the old context using fn_ret (automatically loads .prev).
+ */
+typedef struct TypeV_FuncState {
+    uint8_t *stack;                 ///< Stack
+    uint64_t capacity;              ///< Stack capacity
+    uint64_t limit;                 ///< Stack limit
+    uint64_t flags;                 ///< Flags
+    uint64_t sp;                    ///< Stack pointer
+    uint64_t ip;                    ///< Instruction pointer, used only as back up
+    TypeV_Register regs[MAX_REG];   ///< 256 registers.
+    TypeV_Register* spillSlots;     ///< Spill slots, used when registers are not enough
+    uint16_t spillSize;             ///< Spill size
+    struct TypeV_FuncState* next;   ///< Next function state, used with fn_call or fn_call_i
+    struct TypeV_FuncState* prev;   ///< Previous function state, used fn_ret
+}TypeV_FuncState;
+```
+
+The idea is that, instead of the classical approach of storing all function context into the stack and popping it back up, we just allocate new "execution context" or "state" and we simply switch between them. This is a very efficient way of handling function calls.
+
+Now let's delve into bytecode:
+For example:
+
+```ts
+fn f1(x: u32) {
+    return x + 1
+}
+
+fn main() {
+    let y = f1(5)
+}
+```
+
+The following code will result is the following pseudo bytecode:
+
+```nasm
+start:
+    fn_alloc
+    fn_call_i @main
+
+main:
+    mv_reg_const_u32 R0, 5
+    fn_alloc ; in the vm, this initializes currentFrame->next = new TypeV_FuncState();
+            ; also sets currentFrame->next->prev = currentFrame;
+
+    fn_set_reg R0, R0 ; sets the register R0 of the next frame to R0 of the current frame
+    fn_call @f1 ; in the vm, this sets currentFrame = currentFrame->next;
+                ; And also udpated the instruction pointer to the address of f1
+    
+    fn_get_ret_reg R1, R255 ; R255 is the return register
+
+
+f1:
+    ; initially, R0 is reserved, this is guarenteed by our register allocator
+    mv_reg_const R1, 1
+    add_u32 R2, R0, R1
+    mv_reg_reg R255, R2 ; R255 is the return register
+    fn_ret  ; in the vm, this sets currentFrame = currentFrame->prev;
+```
+
+
+## CLosures
+
+Let's start with a basic example:
+
+```ts
+fn createAdder(x: u32) -> fn(x: u32) -> u32 {
+    f = function(y: u32) {
+        return x + y;
+    };
+
+    return f;
+}
+
+fn main() {
+    let add5 = createAdder(5);
+    let z = add5(9);
+}
+```
+
+Closures requires a lexical analysis, to identify the free variables and to capture them. In the above example, `x` is a free variable, and it is captured by the closure `f`. The closure `f` is then returned by `createAdder`. Not every variable that is accessible within the closure is captured. Only the **needed ones**.
+
+When compiling closures to bytecode, the run-time aspect needs to be isolated from the compile-time aspect. The run-time aspect is the environment, which is the value of the free variables. The compile-time aspect is the function itself. The function is compiled to bytecode, and the environment is captured and stored in a separate object.
+
+To model the environment, a new Struct is introduced:
+
+```c
+/**
+ * @brief Closure, a closure is a function that has captured its environment.
+ */
+
+typedef struct TypeV_Closure {
+    void* fnPtr;                  ///< Function pointer/address
+    TypeV_Register* capturedRegs; ///< Captured registers
+    uint32_t envSize;             ///< Environment size
+}TypeV_Closure;
+```
+
+So now, a closure method is converted into the creation of a new `TypeV_Closure` object. The `TypeV_Closure` object holds the function pointer and the captured registers. We will need new instructions to allocate this object and to set up the environment.
+
+Before I showcase the new instructions, here is the general idea:
+- We create closures in the bytecode
+- When we run a closure, it is the same as calling a regular function, except prior to calling it, we set the context of the current function to the closure object.
+- Upvalues, while stored as registers, are identified by numbers. The limit is set to be 255, so that the IDs can be read as 1byte.
+
+Here is the list of our new instructions:
+
+|Instruction|Arg 1|Arg 2|Arg 3|Description|
+|---|---|---|---|---|
+|closure_init|R|I|I|Creates a new closure object of Arg3 number of upvalues, referencing function address Arg 2 and stores the result in the destination register Arg1.|
+|closure_capture|R|I|R|Captures a register (Arg3) and stores it in the closure object (Arg1) at index Arg2|
+|mv_reg_upvalue|R|I|I|Moves Arg3 bytes from active closure object index Arg2 to register Arg1.|
+|mv_reg_upvalue_ptr|R|I| |Moves pointer value stored in index Arg2 of active closure into register Arg1|
+|mv_upvalue_reg|I|I|R|Moves Arg2 bytes from register Arg3 into active closure upvalue Arg1 |
+|mv_upvalue_reg_ptr|I|R| |Moves pointer value stored in Arg2 into active closure upvalue Arg1|
+|fn_call_closure|R| | |Calls the closure object stored in register Arg 1|
+
+
+`TypeV_FuncState` has been updated to hold the active closure object, as well the methods descriped above are implemented. Now let's review how the bytecode of our closure look like:
+
+
+```nasm
+start:
+    fn_alloc
+    fn_call_i @main
+
+createAdder:
+    ; remember R0 is reserved for the argument x of the function
+    closure_init R1, @anonymousFn1, 1 ; creates a new closure object with 1 upvalue, points to the address of the function @anonymousFn1
+    closure_capture R1, 0, R0 ; captures R0 into the closure object at index 0
+    mv_reg_reg R255, R1 ; R255 is the return register
+    fn_ret
+
+anonymousFn1:
+    ; this is the inner function declared in createAdder
+    ; R0 is reserved for the argument y of the function
+    mv_reg_upvalue R1, 0, 4 ; moves 4 bytes from the upvalue at index 0 into register R1
+                            ; 4 bytes since we are dealing with u32
+    add_u32 R2, R0, R1
+    mv_reg_reg R255, R2 ; R255 is the return register
+    fn_ret
+
+main:
+    mv_reg_const_u32 R0, 5
+    fn_alloc
+    fn_set_reg R0, R0 ; set the first register of the next frame to R0 of the current frame
+    fn_call @createAdder
+    mv_reg_reg R1, R255 ; R255 is the return register
+                        ; R1 now holds the closure object
+    mv_reg_const_u32 R2, 9
+    fn_alloc
+    fn_set_reg R0, R2  ; set the first register of the next frame to R2 of the current frame
+    fn_call_closure R1 ; calls the closure object stored in register R1
+                       ; first, it sets the currentFrame->closure to the closure object
+                       ; then it sets the currentFrame = currentFrame->next and updates the instruction pointer
+
+    fn_get_ret_reg R3, R255 ; R255 is the return register
+    fn_ret
+```
+
+## Effect on register allocation and spilling
+The register allocation algorithm spills registers in a dedicated area `spillSlots`. When a spilled register is needed for a closure, it will be marked as used by the register allocator, to first unspill the register and then capture it in the closure. The drawback in this approach is that closures will still need to have active registers, meaning if an upvalue `x` is being used within a closure, it will require a register to be allocated for it as well as the slot in the closure object. This is a trade-off for the sake of simplicity and performance. The overhead certainly tolerable, but nevertheless, this adds some stress on the register allocator.
+
+On the bright side, the register allocator will not worry about closures, since the upvalue registers will just be marked as used and the allocator will take care of the rest.
+
+## GC and Closures
+Closures, similar to any other dynamic entity in the VM, will have the same life cycle. A closure will be freed when it is no longer marked as reachable.
+
+## Conclusion
+The effectiveness of this implementation is yet to be determined, will update the article once the implementation is complete and tested. 
+
+Until then!

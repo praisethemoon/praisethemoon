@@ -1,0 +1,186 @@
+---
+title: "In depth Look at Generics Implementation in Type-C"
+date: "2024-03-20"
+tags:
+- Type-C
+- Generics
+---
+
+Given the new development of Type-C, I have decided to share my experience with implementing generics in my language. Lovely feature but damn hard to nail! This article will cover the current implementation of generics in Type-C and some of the challenges related to it.
+
+{/* excerpt */}
+
+## Introduction
+
+Generics! We all love them use them and appriciate them. However they are not easy to implement. In this article, I will cover the current implementation of generics in Type-C and some of the challenges related to it.
+
+## Basic Usage
+A generic type, can be thought of a search-and-replace from a compiler perspective, which is somewhat correct, every instance of a generic type we find, we replace with the `concrete` type that is meant to replace it
+
+```ts
+fn get<T>(x: T[], index: u64) -> T {
+    return x[index]
+}
+```
+
+Any type checking is halted on the `get` function, until the `T` type is resolved. This is because the `T` type can be anything, and the compiler cannot make any assumptions about it.
+
+In Type-C compiler, `get` is declared like any regular function. There is a `DeclaredFunction` ast symbol assigned to it. `DeclaredFunction` also contains a field:
+
+```ts
+// From DeclaredFunction.ts
+
+export class DeclaredFunction extends Symbol {
+    prototype: FunctionPrototype;
+    expression: Expression | null;
+    body: BlockStatement | null;
+
+    context: Context;
+    /// .. other fields
+    /**
+     * When a generic function is called, the generic arguments are used to instantiate a new function
+     */
+    concreteGenerics: { [key: string]: DeclaredFunction } = {};
+
+    /// ... methods
+}
+```
+
+Now whenever we find a usage of `get`, we will create a new `instance` of it and push it into our map, the reason we use a map, is that different instances of `get` can have different types, hence resulting in different bytecode for the same function. So think of the `concreteGenerics` field as different implementations of the same function.
+
+The key used is essencially a hash of the given type, so if we use `T => u32`, we just use `@basic:u32` as the key.
+
+```ts
+// BasicType.ts
+
+export class BasicType extends DataType {
+    // ...
+
+    serialize(): string {
+        return `@basic:${this.kind}`
+    }
+
+    // ...
+}
+```
+
+If multiple data types are used, we just concatenate the keys together, with a `-` as a separator.
+
+## Constraints
+Constraints are a way to limit the types that can be used with a generic function. For example, if we have a function that only accepts `u32` and `u64`, we can use constraints to limit the types that can be used with the function. 
+
+```ts
+type MyArray<T: Cube | Circle> = class {
+    data: T[]
+
+    fn get(index: u64) -> T {
+        return data[index]
+    }
+}
+```
+
+In this example, we have setup a constraint over the `T` type, that it can only be `Cube` or `Circle`. 
+
+The implementation for classes generic is similar to functions, but since the entire behavior of the class will differ based on the type, each class instance is stored in a map, with the key being the type hash too.
+
+Additionally, since class methods support generics, they behave the same way as functions. 
+
+Essentially we end up multiple class instances, each class instance can have a method that has different implementations.
+
+## Cloning
+
+In Type-C, when a generic function or data type is made concrete by providing the type argument, everything is cloned and re-resolved.
+
+Resolving a type meaning performaning semantic analysis on the type, and type inference too, for example:
+
+```
+fn get<T>(x: T[], index: u64) = x[index]
+```
+
+The function return type has not been specified, hence we have to infer it. 
+
+So when we provide a concrete type `get<String>(["hi", "hello"], 0)`, we have to clone the function, meaning creating an exact copy where every instance of the type `T` is replaced with `String`.
+
+During the cloning process, when `.clone` is called on a `GenericType`, the concrete type is checked against the constaints, if the constraints are not met, an error is thrown.
+
+## Generic type inference
+
+In Type-C, providing generic arguments is required whenever a generic function or type is used. This design choice is solely so I can avoid infering generics, meaning when a generic function for example is called without the user specifiying the type, the generics need to be figured out somehow.
+
+```ts
+let x: String[] = ["hi", "hello"]
+let y = get(x, 0)
+```
+
+In this example, it is clear that the call to `get` is the same as `get<String>`, because the type of `x` is `String[]` and the first argument of the function is `T[]`.
+
+Despite it all, I was forced to implement this logic. Here is why:
+
+First, interface methods do not support generics. That is because generic methods will need to be concrete at compile time, and interfaces are meant to be abstract.
+A given interface can point to any class at any time, due to Type-C's flexible interface/class compatibility. So it is possible for an interface to point to class and call its generic method, but the generic method is not implemented, because it was never called from the class itself. Hence, interface generic methods are made verboten!
+
+Now this is all fine, but what if we want to have an interface reference to a class with a genreic method, and we want to have access to a concrete instance of that method? This is where the problem lies.
+
+```ts
+type MyInterface = interface {
+    get(x: String[], index: u64) -> String
+}
+
+type MyClass = class {
+    get<T>(x: T[], index: u64) -> T {
+        return x[index]
+    }
+}
+
+
+let x: String[] = ["hi", "hello"]
+let y: MyInterface = new MyClass() 
+```
+
+In theory, the interface method `get` aligns well with its equivalent class method, if it can pass type checking. However, generics type as not explicitely specified, hence we will need to infer them based on the interface method header.
+
+## Inference of generics
+
+The inference is simply a mapping between two data types, `T1` and `T2`. `T1` possibly containing generics and `T2` is fully concrete.
+
+Let's take a basic example:
+
+```ts
+fn get<T>(file: {name: String, URI: string, metadata: {size: u32, author: T}}) {...}
+
+type InternalAuthor = class { ... }
+let internalAuthor1 = new InternalAuthor("John Doe")
+
+let file = {name: "file.txt", URI: "file://file.txt", metadata: {size: 1024, author: internalAuthor1}}
+```
+
+In this example, we will have to match the abstract type of variable `file` given in the function `get` with the concrete type of `file` that is provided. We will have to match data types field by field, make sure they have same structure and everything, **recursively** until we end up with a datatype `T1` that is generic and `T2` that is concrete. That's when we have a match.
+
+Kudos! So far so good!
+
+However, let's add a twist to the example:
+
+```ts
+type InternalAuthor = class { ... }
+type ExternalAuthor = class { ... }
+
+let internalAuthor1 = new InternalAuthor("John Doe")
+let externalAuthor1 = new ExternalAuthor("Jane Doe")
+
+fn get<T: InternalAuthor | ExternalAuthor >(file: {name: String, URI: string, metadata: {size: u32, author: T}, uploadedBy: T}) {...}
+
+let file = {name: "file.txt", URI: "file://file.txt", metadata: {size: 1024, author: internalAuthor1}, uploadedBy: externalAuthor1}
+```
+
+You may notice, we have added a new field `uploadedBy` to the `file` object. So as long as the generic type inferred is either `InternalAuthor` or `ExternalAuthor`, we are good to go, but not really,
+because while the constraint can accept both, only one needs to be persent at a time! Because if you end up with two parameters that have under the hood, different types, the semantic changes, and in case of type-c, the signature used to extract the type information changes too. The compiler will need to know if `T` matches `InternalAuthor` or `ExternalAuthor` at compile time, hence a new constraint has been added, to only allow one type at a time.  
+
+So when the compiler first maps `T` to `InternalAuthor`, and then `T` to `ExternalAuthor`, it will realise that `T` is already mapped. So what is going to happens is the following:
+1. Find a common type between `InternalAuthor` and `ExternalAuthor`, which is none in our case
+2. If a common type is found, run it by the constraint again, since it is a different type now, if it passes, we are good to go, if not, throw an error
+3. Repeat
+
+The reason why the Type-C compiler searches for a common type, is because of how type compatibility works in type-c. In order to offer great flexibility for developers (and potentially Devin), I have to suffer 😭
+
+## Conclusion
+To be fair, generics took from 60% to 70% of the time I spent on Type-C. It was a challenging feature to implement, and I am still implementing it, this project is getting way bigger for a one man show, but I am enjoying it. I am learning a lot, and I am happy with the progress I am making. So the conclusion is, generics are hard, but wanted feature, always worth implemented. But most important, always build a specification first, on what is allowed and what is not. Think of edge cases, because they will happen, and Thanks for reading! 🎉
