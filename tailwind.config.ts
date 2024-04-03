@@ -13,7 +13,7 @@ const config: Config = {
     typography: (theme: ThemeConfig) => ({
       DEFAULT: {
         css: {
-          // Other custom styles as needed
+          maxWidth: '1000px', // Remove the max-width or set a specific value
         },
       },
     }),
