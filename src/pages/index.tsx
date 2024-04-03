@@ -4,6 +4,7 @@ import path from 'path';
 import { useRouter } from 'next/router';
 import matter from 'gray-matter';
 import { GiEvilMoon } from 'react-icons/gi';
+import Head from 'next/head';
 
 export type BlogPost = {
     name: string,
@@ -24,6 +25,9 @@ const BlogPosts: React.FC<{ posts: BlogPost[] }> = ({ posts }) => {
     return (
 
         <div>
+            <Head>
+                <title>praisethemoon's blog</title>
+            </Head>
             <div className="striped1 hero bg-base-100 py-20">
                 <div>
                     <div className="hero-content text-center">

@@ -1,9 +1,13 @@
 // src/pages/CodeOfConduct.tsx
+import Head from 'next/head';
 import React from 'react';
 
 const Research: React.FC = () => {
     return (
         <div>
+        <Head>
+            <title>praisethemoon's research</title>
+        </Head>
             <div className="striped1 hero bg-base-100 py-20">
                 <div>
                     <div className="hero-content text-center">

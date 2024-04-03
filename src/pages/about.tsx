@@ -1,9 +1,13 @@
 import React from 'react';
 import getUnicodeFlagIcon from 'country-flag-icons/unicode'
+import Head from 'next/head';
 
 const About: React.FC = () => {
     return (
         <div>
+        <Head>
+            <title>Who is praisethemoon?</title>
+        </Head>
             <div className="hero bg-base-100 py-20 bg-cover bg-center bg-no-repeat min-h-[400px]" style={{backgroundImage: "url('/images/gris-bg.jpeg')"}}>
                 <div>
                     <div className="hero-content text-center text-white">

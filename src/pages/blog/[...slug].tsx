@@ -12,6 +12,8 @@ import { useEffect, useRef } from 'react';
 import matter from 'gray-matter';
 import GistEmbed from '@/components/GistEmbed';
 import remarkGfm from 'remark-gfm';
+import Head from 'next/head'
+
 
 // Define the path to your posts directory
 const postsDirectory = path.join(process.cwd(), 'posts');
@@ -85,6 +87,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 const PostPage = ({ source, meta }: any) => {
     return (
         <div>
+            <Head>
+                <title>{meta.title}</title>
+            </Head>
             <div className="striped1 hero bg-base-100 py-20">
                 <div>
                     <div className="hero-content text-center">
