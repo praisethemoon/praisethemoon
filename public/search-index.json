@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "introduction",
+    "excerpt": "\n# Introduction\n\nType-C is a versatile and high-performance programming language tailored for performance-intensive applications, such as user interfaces, games, and web services, etc. While Type-C ca"
+  },
+  {
+    "slug": "getting-started",
+    "excerpt": "# Getting Started\n\n<div role=\"alert\" className=\"alert striped1\">\n  <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" className=\"stroke-info shrink-0 w-6 h-6\"><path strokeLinecap="
+  },
+  {
+    "slug": "hello-world",
+    "excerpt": "# Hello, world!\n\n## Hello world program\n\n```tc\nfrom std.io import println\n\nfn main(args: String[]) -> i32 {\n    println(\"Hello, world!\")\n    return 0\n}\n```\n\n## Program structure\n\nHere's a breakdown of"
+  },
+  {
+    "slug": "design",
+    "excerpt": "# Type-C Design and Philosophy\n\nBefore we dissect the intricate features and functionalities of Type-C, it's crucial to take a step back and understand the foundational principles that underpin its cr"
+  },
+  {
+    "slug": "algorithms",
+    "excerpt": "Algorithm Implementation\n===\n\nIn this section, we explore the practical applications of Type-C by diving into algorithm implementation. Implementing algorithms will help demonstrate the syntax of Type"
+  },
+  {
+    "slug": "basics",
+    "excerpt": "# Type-C Basics\n\nIn this chapter, we introduce the basics of Type-C, such as identifiers,\nkeywords, literals, program structure, etc. Some of the things we go\nthrough here are more in-depth as others,"
+  },
+  {
+    "slug": "functions",
+    "excerpt": "Functions\n===\n\nIn Type-C, functions are first-class citizens, embodying a core principle of the language's design that emphasizes flexibility and performance. There are two primary types of functions:"
+  },
+  {
+    "slug": "datatypes/overview",
+    "excerpt": "# Data Types\nIn this section, we will discuss the various data types supported by Type-C. The language provides a set of built-in types, as well as the ability to define custom types.\n\nType-C offers t"
+  },
+  {
+    "slug": "datatypes/basictypes",
+    "excerpt": "Basic DataTypes\n===\n\nLike any regular programming language, Type-C provides basic built-in\ndata types. These types have a guaranteed fixed size, ensuring that the\ndata they represent occupies a consta"
+  },
+  {
+    "slug": "datatypes/structs",
+    "excerpt": "Structs\n===\n\nStructs (short for \"structures\") in Type-C serve as a composite data type that enables developers to group multiple variables of disparate types under a single identifier. This promotes e"
+  },
+  {
+    "slug": "datatypes/enums",
+    "excerpt": "\n# Enums\n\nEnums in Type-C serve as a way to define a set of named constants. These constants are internally mapped to integer. The interal type can change, to allow ease of conversions.\n\n## Basic Usag"
+  },
+  {
+    "slug": "datatypes/variants",
+    "excerpt": "\n# Variants\n\nVariants in Type-C are algebraic data types that provide an expressive way to represent multiple possible types within a\nsingle type declaration. Unlike enums, variants can also include a"
+  },
+  {
+    "slug": "datatypes/arrays",
+    "excerpt": "# Arrays\n\nTypes-C comes with built-in arrays types. This type is a primitive type and not to be confused with standard library `Array` type.\n\nSimilar to Java's arrays, Type-C arrays have fixed size an"
+  },
+  {
+    "slug": "datatypes/functions",
+    "excerpt": "# Functions as Data Types\n\nIn Type-C, functions are first-class citizens, allowing them to be assigned to variables, passed as arguments, or returned from other functions. The language supports the de"
+  },
+  {
+    "slug": "datatypes/interfaces",
+    "excerpt": "Interfaces\n===\n\nInterfaces in Type-C serve to define contracts for classes or types. These contracts, specified as sets of method signatures, ensure that the types adhering to the interface fulfill ce"
+  },
+  {
+    "slug": "datatypes/joins",
+    "excerpt": "# Type Joins\nType join is an operation to help reduce the necessaity to create new types. It is a way to combine multiple types into a single type. Only interface datatypes can joined together. Resuti"
+  },
+  {
+    "slug": "datatypes/classes",
+    "excerpt": "# Classes\n\nClasses in Type-C serve as the cornerstone for object-oriented programming (OOP), providing a structured approach to code organization. In contrast to traditional OOP languages, which often"
+  },
+  {
+    "slug": "datatypes/nullables",
+    "excerpt": "# Nullables\n\nIn Type-C, nullable types can hold either a value of their base type or `null`. The nullable types are only applicable to specific categories such as classes, interfaces, and structs. To "
+  },
+  {
+    "slug": "datatypes/promises",
+    "excerpt": "Promise DataType\n===\n\nThe best way to describe promise, is that they are the same as a regular JavaScript object, except they are built-in data types within the language.\n\nA promise represent a piece "
+  },
+  {
+    "slug": "datatypes/threads",
+    "excerpt": "Threads DataType\n===\nThe `thread<T>` type in Type-C represents a higher-level abstraction over operating system threads, designed to facilitate concurrent programming by executing code in parallel and"
+  },
+  {
+    "slug": "datatypes/locks",
+    "excerpt": "Locks\n===\n\nIn my instances, it is often desired to share data between threads. Sharing in read-only mode is the recommended approach, however it doesn't solve all the problems. Generally speaking, a g"
+  },
+  {
+    "slug": "interface-oriented-programming",
+    "excerpt": "Interface Oriented programming\n===\n\nTODO"
+  },
+  {
+    "slug": "expressions",
+    "excerpt": "# Expressions\nExpressions form the building blocks of any Type-C program. They are fundamental constructs that evaluate to values, execute operations, or rarely, produce side effects. As you have seen"
+  },
+  {
+    "slug": "statements",
+    "excerpt": "# Statements\n\nIn programming, expressions and statements are two fundamental concepts that often get confused. An expression is any piece of code that evaluates to a single value. For example, `2 + 2`"
+  },
+  {
+    "slug": "type-system",
+    "excerpt": "# Type System\n\nGenerally speaking, there are two primary mechanisms for establishing type compatibility: *structural typing* and *nominal typing*. Type-C's type system is purely structural. However in"
+  },
+  {
+    "slug": "type-casting",
+    "excerpt": "\n# Type Casting\n\n## Introduction\nType casting in Type-C allows for the conversion of values between different data types. This feature is particularly useful when you need to operate on a value with a"
+  },
+  {
+    "slug": "type-compatibility",
+    "excerpt": "# Type Compatibility\n\n## Basic Datatypes Compatibility\nBasic data types are inherently compatible from largest to smallest. Meaning the larger type is usually compatible with the smaller one. The othe"
+  },
+  {
+    "slug": "pattern-matching",
+    "excerpt": "## Pattern Matching\nPattern matching is a powerful feature in type-c, it always to deconstruct variables, match algebraic types and overall provides a powerful control flow expression to smoothen code"
+  },
+  {
+    "slug": "ffi",
+    "excerpt": "# Foreign Function Interface\n\nType-C provides a Lua-inspired API to interface with the virtual machine. However, since Type-C requires types to interface properly with FFIs, a type annotation is neede"
+  },
+  {
+    "slug": "concurrency",
+    "excerpt": "Concurrency\n===\n\nTODO"
+  }
+]
