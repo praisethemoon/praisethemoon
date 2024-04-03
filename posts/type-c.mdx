@@ -69,7 +69,7 @@ Here is the tl;dr. Exceptions, as the name suggest, are exceptional cases. But y
 ## Hello Type-C
 
 ### Hello World
-```rust
+```tc
 import std.io 
 fn main(args: string[] ) -> u32 
 { 
@@ -79,7 +79,7 @@ fn main(args: string[] ) -> u32
 ```
 
 ### Fib
-```rust
+```tc
 fib(x: u32) -> u32 = 
     match x { 
         0 => 0, 
@@ -90,7 +90,7 @@ fib(x: u32) -> u32 =
 If you have ligatures enabled, then you have to admit the code looks sexy.
 
 ### Data Types
-```rust
+```tc
 // struct
 type Point = {
     x: u32
@@ -123,7 +123,7 @@ printPoint({10, 10})
 
 ### Concurrency
 Concurrency is a built-in feature within Type-C, integrated in the form of processes. The model is agent-based, where each process is an agent that can communicate with other agents through messages. Processes are scheduled by the VM, and they are non-blocking. In the following example, type annotations are used for clarity, but they are not required. Type-C type inference can handle process types as well.
-```rust
+```tc
 import std.io
 from std.concurrency import Runnable, Promise
 
@@ -192,7 +192,7 @@ FFI is not really a Type-C feature, but rather a featuer of the VM, called Type-
 The FFI design was massively inspired by Lua. However since Type-C is statically typed,
 you will need to write both C code and Type-C headers. Here is an example of stdio FFI.
 
-```rust
+```tc
 /** 
  * order is important here, the order in the definition must 
  * match the order of exported functions in the C code.
