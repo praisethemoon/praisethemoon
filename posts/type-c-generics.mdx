@@ -17,7 +17,7 @@ Generics! We all love them use them and appriciate them. However they are not ea
 ## Basic Usage
 A generic type, can be thought of a search-and-replace from a compiler perspective, which is somewhat correct, every instance of a generic type we find, we replace with the `concrete` type that is meant to replace it
 
-```ts
+```tc
 fn get<T>(x: T[], index: u64) -> T {
     return x[index]
 }
@@ -27,8 +27,8 @@ Any type checking is halted on the `get` function, until the `T` type is resolve
 
 In Type-C compiler, `get` is declared like any regular function. There is a `DeclaredFunction` ast symbol assigned to it. `DeclaredFunction` also contains a field:
 
-```ts
-// From DeclaredFunction.ts
+```tc
+// From DeclaredFunction.tc
 
 export class DeclaredFunction extends Symbol {
     prototype: FunctionPrototype;
@@ -50,8 +50,8 @@ Now whenever we find a usage of `get`, we will create a new `instance` of it and
 
 The key used is essencially a hash of the given type, so if we use `T => u32`, we just use `@basic:u32` as the key.
 
-```ts
-// BasicType.ts
+```tc
+// BasicType.tc
 
 export class BasicType extends DataType {
     // ...
@@ -69,7 +69,7 @@ If multiple data types are used, we just concatenate the keys together, with a `
 ## Constraints
 Constraints are a way to limit the types that can be used with a generic function. For example, if we have a function that only accepts `u32` and `u64`, we can use constraints to limit the types that can be used with the function. 
 
-```ts
+```tc
 type MyArray<T: Cube | Circle> = class {
     data: T[]
 
@@ -107,7 +107,7 @@ During the cloning process, when `.clone` is called on a `GenericType`, the conc
 
 In Type-C, providing generic arguments is required whenever a generic function or type is used. This design choice is solely so I can avoid infering generics, meaning when a generic function for example is called without the user specifiying the type, the generics need to be figured out somehow.
 
-```ts
+```tc
 let x: String[] = ["hi", "hello"]
 let y = get(x, 0)
 ```
@@ -121,7 +121,7 @@ A given interface can point to any class at any time, due to Type-C's flexible i
 
 Now this is all fine, but what if we want to have an interface reference to a class with a genreic method, and we want to have access to a concrete instance of that method? This is where the problem lies.
 
-```ts
+```tc
 type MyInterface = interface {
     get(x: String[], index: u64) -> String
 }
@@ -145,7 +145,7 @@ The inference is simply a mapping between two data types, `T1` and `T2`. `T1` po
 
 Let's take a basic example:
 
-```ts
+```tc
 fn get<T>(file: {name: String, URI: string, metadata: {size: u32, author: T}}) {...}
 
 type InternalAuthor = class { ... }
@@ -160,7 +160,7 @@ Kudos! So far so good!
 
 However, let's add a twist to the example:
 
-```ts
+```tc
 type InternalAuthor = class { ... }
 type ExternalAuthor = class { ... }
 

@@ -30,13 +30,13 @@ In this post, I will be talking about a few of those. Most likely, variants, str
 ## Integers & Floats
 Integers are the basic building blocks of any programming language. Type-C supports 8, 16, 32 and 64 bit integers. Their size is fixed.
 Since type-c is a statically and strongly typed language, some integers are not implicitly converted to other types, when there is a potential loss of precision. For example, the following code will not compile:
-```
+```tc
 let x: i64 = 1
 let y: i32 = x // error
 ```
 
 However,
-```
+```tc
 let x: i32 = 1
 let y: i64 = x // ok
 ```
@@ -176,7 +176,7 @@ While this doesn't always guarentee the best performance, it reduces the number 
 ## Enums
 Enums are very basic, the most interesting part is how they are represented in the VM. Type-C allows you to choose a specific type on how to represent the enum.
 
-```ts
+```tc
 type Colors = enum as u8 {
     Red,
     Green,
@@ -188,7 +188,7 @@ You can only an integer type, signed or un signed. By default, it is `i32`.
 
 ## Structs
 Structs has been addressed previously, but they are flexible data structure, designed to be used for grouping data together.
-```ts
+```tc
 type Point = struct {
     x: i32,
     y: i32
@@ -209,45 +209,45 @@ printPoint({x: f32, y: f32}) // error
 Interfaces are the most interesting part of type-c. They are the most powerful feature of the language. Type-C is not a fully object oriented language, but it does support some object oriented features.
 Type-C many drops OOP in favor of interface oriented programming. This means that classes cannot extend other classes. Instead, classes can implement interfaces. Interfaces are a set of methods that a class must implement. This is similar to the concept of interfaces in Java or Go. Interface can extend other interfaces, but not classes.
 
-```ts
+```tc
 type Duck = class {
     let color: Colors
 
-    init(color: Colors) {
+    fn init(color: Colors) {
         this.color = color
     }
 
-    quack() {
+    fn quack() {
         // do stuff
     }
 
-    walk() {
+    fn walk() {
         // do stuff
     }
 
-    fly() {
+    fn fly() {
         // do stuff
     }
 
-    swim() {
+    fn swim() {
         // do stuff
     }
 }
 ```
 Now we can easily create an array of birds who can fly for example,
 
-```ts
+```tc
 let birds: interface { fn fly() -> void }[] = [new Duck(Colors.Red), new Duck(Colors.Green)]
 ```
 
 Types are allowed to be anynoumous, and inference is automatic. 
 
-```ts
+```tc
 let birdsWhoFlyAndSwin: interface { fn fly() -> void, fn swim() -> void }[] = [new Duck(Colors.Red), new Duck(Colors.Green)]
 ```
 Would be exactly the same as 
 
-```ts
+```tc
 let birdsWhoFlyAndSwin: interface { fn fly() -> void } & interface { fn swim() -> void }[] = [new Duck(Colors.Red), new Duck(Colors.Green)]
 ```
 
@@ -255,7 +255,7 @@ The inference system is smart enough to group the interfaces together. This is c
 
 Now the last type is nullable. Nullable is a type that can be null. This is similar to the concept of nullable types in typescript. TypeC supports the denull operator `!!` and the optional chaining operator `?.`. 
 
-```ts
+```tc
 let maybeNullDucks: Duck?[] = [new Duck(Colors.Red), null, new Duck(Colors.Green)]
 
 maybeNullDucks[0]!!.quack() // ok
@@ -265,7 +265,7 @@ maybeNullDucks[1]?.quack() // ok
 ## Strict Types
 The last category of types is strict types. `strict` is not really a data type but rather a type modifier. It is used to indicate that a type is strict. Strict type forces the compiler to check for strict structure equality. This means that the following code will not compile:
 
-```ts
+```tc
 let x: strict {y: i32, x: i32} = {x: 1, y: 2}
 ```
 
@@ -275,18 +275,18 @@ Strict types are useful when dealing with FFI, since you will need to ensure tha
 
 Strict types can be used with interfaces, classes and structs. Since at its core, `strict` is a feature designed to fix the layout, as long as the layout is guarenteed, strict can be very flexible:
 
-```ts
+```tc
 let x: strict interface { fly() -> void, swim() -> void } = new Duck(Colors.Red) // OK
 ```
 
 The previous code will work just fine, because `fly` and `swim` are aligned in the same order in the interface and the class.
 
-```ts
+```tc
 let y1: strict {x: i32, y: i32} = {y: 1 as i32, x: 6 as i32} // ERROR
 let y2: strict {x: i32, y: i32} = {a: 3.14 as f32, x: 4 as i32, y: 0 as i32} // OK
 ```
 
-```ts
+```tc
 let z1: interface { beCool() -> void } & interface { isCool() -> bool } & strict interface { isAwesome() -> bool} = ...
 let y2: strict interface { beCool() -> void } = z1 // OK
 ```

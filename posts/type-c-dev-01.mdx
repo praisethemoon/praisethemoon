@@ -34,7 +34,7 @@ As usual, anything written here might not necessarily end up in the final versio
 We all love javascript objects. They are easy to use, easy to create, and easy to pass around. However, under the hood is a hash function that maps keys to values. This is not very efficient. In order to maintain a minimal level of flexibility and maximum level of efficiency, Type-C uses allows structs to be used with duck typing.
 
 In typescript, we can do the following:
-```ts
+```tc
 let x = {x: 1, y: 2}
 let y = {y: 2, x: 1}
 
@@ -52,7 +52,7 @@ Well javascript uses hashmap for fields. So order doesn't really matter. Type-C 
 ### Type-V Structs
 Let's look at the following example:
 
-```
+```tc
 fn f() {
     let alpha: {x: i32, y: i32} = {y: 1, x: 6}
 }
@@ -107,13 +107,13 @@ Now we can interpret the IR as follows:
 
 `s_set_offset_shadow struct dest_index src_index` will simply perform the following operation:
 
-```
+```c
 shadow.offsets[dest_index] = shadow.originalStruct.offsets[src_index]
 ```
 
 Let's try to modify the value of the shadow struct now:
 
-```
+```tc
 fn f() {
     let alpha: {x: i32, y: i32} = {y: 1, x: 6}
     alpha.x = 100
