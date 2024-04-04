@@ -42,6 +42,7 @@ const Header: React.FC = () => {
                         <li><Link href={'/'}><FaRegNewspaper size={20} /> Blog</Link></li>
                         <li><Link href={'/research'}><GiMaterialsScience size={20}/> Publications</Link></li>
                         <li><Link href={'/about'}><GiMoon size={20}/> About</Link></li>
+                        <li><Link href={'https://typec.praisethemoon.org'} className='logoFont'>Type-C</Link></li>
                     </ul>
                 </div>
                 <Link className="btn btn-ghost text-xl dancing-script-moon" href='/'><GiEvilMoon/></Link>
@@ -51,6 +52,7 @@ const Header: React.FC = () => {
                     <li><Link href={'/'}><FaRegNewspaper size={20} /> Blog</Link></li>
                     <li><Link href={'/research'}><GiMaterialsScience size={20}/> Publications</Link></li>
                     <li><Link href={'/about'}><GiMoon size={20}/> About</Link></li>
+                    <li><Link href={'https://typec.praisethemoon.org'} className='logoFont'>Type-C</Link></li>
                 </ul>
             </div>
             <div className="navbar-end">
