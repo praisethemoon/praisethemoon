@@ -1,0 +1,97 @@
+---
+title: "Notarizing Electron App in 2024"
+date: "2024-07-17"
+published: true
+
+tags:
+- security
+- electron
+- macos
+---
+Most of cases, I would just write about things that are more less unique, or topics i am really passionate about. But given the messy state (IMO) of electron and its eco-system as well the complexity
+of code signing and notarization, I thought it would be a good idea to write about it, and save some people some time (hopefully)
+{/* excerpt */}
+## Preface
+I am working on a new project, called MoonPiano, its an awesome Piano Learning app, have a look at it: https://moonpiano.io
+
+<center>
+<img src="/images/mp-logo.png" alt="Yumi!" width={128}/>
+</center>
+
+During the development of MoonPiano, I had to deal with code signing and notarization of the app. This tutorial is a result of my experience with it.
+
+## First and Foremost
+
+1. The tutorial written by `kilianvalkhof` https://kilianvalkhof.com/2019/electron/notarizing-your-electron-application/ is a good starting point. However, it is outdated. The process has changed a bit.
+2. This guide uses `electron-builder` to build the app. I am not sure if it works with other builders.
+3. I am only discussing MacOS Code Signing / notarization. I have given up on Windows, absurd code signing certificate prices.
+4. Expects you to have a valid Apple Developer account and generate an apple app specific password.
+
+## Let's get started.
+Now this tutorial assumes that you have a valid Apple Developer account. If you don't have one, you can get one for free. However, you will need to pay $99/year to get your signing certificate.
+
+### Step 1: Making sure you have the right certificate
+Make sure you are signing with a `Developer ID Certificate`. This is different from `Development` or the certificate that issued by default.
+
+Not sure? Have a look at https://developer.apple.com/account/resources/certificates/list and see if your certificate is of the right category.
+If not you have to request it.
+
+Source: https://stackoverflow.com/questions/64168569/electron-notarize-problem-not-signing-all-binaries.
+
+### Step 2: Export the certificate as a `.p12` file
+Now you will want to download your certificate, import it to your keychain.
+I personally had to generate `.p12` file from Xcode, Xcode -> Preferences -> (Login with Apple ID if you have not) -> Select your ID -> Manage Certificates -> Right click the certificate -> Export.
+Try to not forget your password, you will need it later (yeah no sh*t)
+
+### Step 3: Setting up test environment
+Now you will want to create a `electron-builder.env` at the root of your project, this is where electron-builder will load the environment variables from.
+** DO NOT ADD THIS FILE TO YOUR REPO **
+Now within this, we will need to define the following variables:
+
+```
+APPLE_APP_SPECIFIC_PASSWORD=[any app specific password]
+APPLE_ID=[apple acc email]
+APPLE_TEAM_ID=
+CSC_LINK=~/path/to.p12
+CSC_KEY_PASSWORD=[password used to export the certificate]
+```
+I have left `APPLE_TEAM_ID` empty, because I did not need it. And due to another fact, that now, electron-builder does not respect
+`afterBuild` hook, so you can't use your custom notarization script (which would use `electron-notarize` package to notarize the app). Electron will perform this by default
+(source: https://github.com/electron-userland/electron-builder/issues/8103)
+
+So remove the `afterBuild` hook from your `package.json` if you have it.
+
+### Step 4: Setting up the Team ID
+You can try and build now, but you will still receive the same issue as in the previously linked github issue.
+Solution is to add the 
+```ts
+"mac": {
+    /// .. 
+    "notarize": {
+        "teamId": "YOUR_TEAM_ID"
+      }
+    /// ..
+}
+```
+ to your `package.json`. If you are using `electron-builder.ymk` you will want to switch to
+`electron-builder.ts` instead. Because the `notarize` field in yml config, expects a boolean value.
+
+So your `electron-builder.ts` would have a config as follows:
+```ts
+mac: {
+    entitlements: "build/entitlements.mac.plist",
+    entitlementsInherit: "build/entitlements.mac.plist",
+    hardenedRuntime: true,   // !
+    gatekeeperAssess: false, // !
+    "notarize": {
+        "teamId": "XYZ"
+    },
+    // ...
+}
+```
+
+### Step 5: Building the app
+Now you can build the app. If everything goes well, you should see the app being built and notarized.
+Otherwise drop a comment below, I will try to help you out.
+
+
