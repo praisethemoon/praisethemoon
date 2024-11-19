@@ -1,0 +1,382 @@
+---
+title: "Type-C is out, and it is AWESOME!"
+date: "2024-11-19"
+published: true
+tags:
+- Type-C
+- Type-V
+---
+Type-C has been announced to the public! And it rocks! In this post, we will dive into some of its features and how they work under the hood.
+{/* excerpt */}
+
+## Type-C Release
+I have posted about Type-C on [Reddit](https://www.reddit.com/r/ProgrammingLanguages/comments/1gu1krv/typec_programming_language/) and [dev.to](https://dev.to/praisethemoon/type-c-programming-language-3cj3) and now
+let's look at some of its features!
+
+## A Look at Type-C in Action
+Type-C offers most features you would expect from a AAA programming language. It has a strong type system, generics, classes, closures, you know the drill.
+
+In this post we will look at a specific example, `std.array.Array` class.
+
+This class provides a basic `Array` class to push/pop elements. The class definition is rather large, so we will focus only on small parts of it.
+
+```tc
+type Array<T> = class AbstractArray<T> {
+    let data: T[]
+    let len: u64
+    let capacity: u64
+
+    fn init(mut data: T[]) {
+        this.data = data
+        this.len = data.length
+        this.capacity = this.len
+    }
+
+    /* other methods */
+
+    fn map<Z>(f: fn (x: T) -> Z) -> Array<Z> {
+        let result1 = new Array<Z>([])
+        for let i: u64 = 0; i < this.len; i = i + 1 {
+            result1.push(f(this.data[i]))
+        }
+
+        return result1
+    }
+
+    fn toIterator() {
+        let iterator = cfn() -> (T, bool) {
+            let counter: u64 = 0
+
+            for let i: u64 = 0; i < this.len-1; i = i + 1 {
+                let value = this.data[i]
+                yield (value, false)
+            }
+
+            let value = this.data[this.len-1]
+            yield! (value, true)
+        }
+
+        return coroutine iterator
+    }
+}
+```
+
+In this post, I will go through two things, Generics and Coroutines&Closures.
+
+## Generics
+Similar to TypeScript, Type-C's compiler is able to identify generics from usage. This applies to all class method except the constructor methods.
+
+Let's look at `map` method:
+
+```tc
+    fn map<Z>(f: fn (x: T) -> Z) -> Array<Z> {
+        let result1 = new Array<Z>([])
+        for let i: u64 = 0; i < this.len; i = i + 1 {
+            result1.push(f(this.data[i]))
+        }
+
+        return result1
+    }
+```
+
+It requires an argument `f` which is a function that takes a single argument of type `T` and returns a value of type `Z`.
+
+Now let's see it in action:
+
+```tc
+from std.io import println
+from std.array import Array
+
+fn main() {
+    let x: Array<u32> = new Array<u32>([1, 2, 3, 4, 5])
+
+
+    let y = x.map(fn(x: u32) = "#"+x)
+    println(y[0])
+
+    return 0
+}
+```
+
+If we compile this:
+```bash
+(base) praisethemoon@praisethemoons-MacBook-Pro type-c % node outs/index.js -c ./tests/template -o ./output --run
+Compiling  ./tests/template
+ stdout:
+current dir: /Users/praisethemoon/projects/type-c/type-v/cmake-build-debug
+Source map file: /Users/praisethemoon/projects/type-c/type-c/output/src_map.map.txt
+Type-V VM
+  - OS: macOS
+  - Arch: ARM64
+  - CC: Clang 16.0.0
+Current working directory: /Users/praisethemoon/projects/type-c/type-v/cmake-build-debug
+#1
++---------------------------------------------------------------------------------------------+
+| Core | Reg  | i8 | u8 | i16 | u16 | i32 | u32 | i64 | u64 | f32      | f64      | ptr | hex |
+*---------------------------------------------------------------------------------------------*
+| 1    | R255 | 0  | 0  | 0   | 0   | 0   | 0   | 0   | 0   | 0.000000 | 0.000000 | 0x0 | 0   |
++---------------------------------------------------------------------------------------------+
+```
+
+Ignore the table and the env-text which showcases the runtime info. `#1` is our std output.
+
+The compiler is able to recursively infer the concrete type of `Z`, by recursively looking at the parameter given.
+
+How does this happen? Well the expression `fn(x: u32) = "#"+x` is inferred as (pseudocode):
+```json
+{
+    "kind": "FunctionType",
+    "args": [
+        {
+            "kind": "BasicType",
+            "name": "u32"
+        }
+    ],
+    "returnType": {
+        "kind": "ReferenceType",
+        "name": "String"
+    }
+}
+```
+
+Now since `map` method belongs to a generic class, once we create a concrete type of it, the method is cloned, where each generic type is replaced with the concrete type.
+Hence resulting in map which requires the following argument type:
+
+```json
+{
+    "kind": "FunctionType",
+    "args": [
+        {
+            "kind": "BasicType",
+            "name": "u32"
+        }
+    ],
+    "returnType": {
+        "kind": "GenericType",
+        "name": "Z"
+    }
+}
+```
+
+Now if we compare them side by side:
+
+<img src="/images/tc-awesome/concrete-generic-diff.png" alt="Vector" />
+
+There we have it! We clone the function once again, replacing the generic type `Z` with the concrete type `String`.
+
+This process of recursively extracting the concrete type from the function is done through the method `getGenericParametersRecursive` implemented in every
+data type in the compiler, let's have a look at an example:
+
+
+#### StructType
+```ts
+export class StructType extends DataType {
+    fields: StructField[];
+
+    /* .. other fields and methods */
+
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        if(this.preGenericExtractionRecursion()){
+            return;
+        }
+
+        // make sure originalType is a StructType
+        if(!originalType.is(ctx, StructType)){
+            ctx.parser.customError(`Expected struct type when mapping generics to types, got ${originalType.shortname()} instead.`, this.location);
+        }
+
+        let structType = originalType.to(ctx, StructType) as StructType;
+        for(let i = 0; i < this.fields.length; i++){
+            // make sure field names matches
+            if(this.fields[i].name != structType.fields[i].name){
+                ctx.parser.customError(`Expected field ${this.fields[i].name}, got ${structType.fields[i].name} instead.`, this.location);
+            }
+
+            this.fields[i].type.getGenericParametersRecursive(ctx, structType.fields[i].type, declaredGenerics, typeMap);
+        }
+
+        this.postGenericExtractionRecursion()
+    }
+}
+```
+
+This method is called on a data type that might contain generic, so in our case, `map`.
+
+First, notice the method `preGenericExtractionRecursion` and `postGenericExtractionRecursion`. These are used to prevent infinite recursion when a generic type is used in a recursive data structure.
+The first thing this function does (after avoiding our compiler to die), is to make sure we are comparing a `StructType` with another `StructType`. Then it iterates through the fields of the struct, making sure the field names match, and then recursively calls `getGenericParametersRecursive` on the field type.
+
+Now let's look at its parameters:
+- `ctx`: The context of the current compilation
+- `originalType`: The original type of the struct (it is the concrete type, because `this` is the generic type)
+- `declaredGenerics`: The generics we expect to find, these are extracted from the definition, for example `map<Z>`, `Z` is the declared generic.
+- `typeMap`: A map of the generic types to the concrete types. At the end, every generic type in `declaredGenerics` needs to be replaced with the concrete type.
+
+If we are, we call the function recursively on each field. This is the same behavior for every data type that has subfields.
+
+This process ends when we enter `GenericType.getGenericParametersRecursive` which is the base case of the recursion. This function is responsible for replacing the generic type with the concrete type.
+
+
+Since `GenericType` is our terminal, let's look at its implementation:
+
+#### GenericType
+
+```ts
+export class GenericType extends DataType {
+    name: string;
+    constraint: GenericTypeConstraint;
+    constructor(location: SymbolLocation, name: string, constraint: GenericTypeConstraint) {
+        super(location, "generic");
+        this.name = name;
+        this.constraint = constraint;
+    }
+
+    /* .. other fields and methods */
+    getGenericParametersRecursive(ctx: Context, originalType: DataType, declaredGenerics: {[key: string]: GenericType}, typeMap: {[key: string]: DataType}) {
+        // make sure this is a declared generic
+        if(!(this.name in declaredGenerics)){
+            ctx.parser.customError(`Generic type ${this.name} is not declared`, this.location);
+        }
+
+        // make sure the original type matches the constraint
+        if(!this.constraint.checkType(ctx, originalType)){
+            ctx.parser.customError(`Generic type ${this.name} does not match constraint`, originalType.location);
+        }
+
+        if(this.name in typeMap){
+            // we do not allow generics to satisfy different constraints in one instance!
+            // hence we need to check if the specified type and the current type match
+            let res = matchDataTypes(ctx, typeMap[this.name], originalType);
+            if(!res.success){
+                // Find a common type
+                let commonType = findCompatibleTypes(ctx, [typeMap[this.name], originalType]);
+                if(commonType === null){
+                    ctx.parser.customError(`Generic type ${this.name} do not match its same instance: expected ${typeMap[this.name].shortname()}, but ${originalType.shortname()} found`, originalType.location);
+                }
+                else {
+                    // we match the common type against the constraint of the generic type
+                    if(!this.constraint.checkType(ctx, commonType)){
+                        ctx.parser.customError(`Inferred generic type ${this.name}: ${commonType.shortname()} does not match constraint, found multiple different usages of generic type: ${typeMap[this.name].shortname()} and ${originalType.shortname()}`, originalType.location);
+                    }
+
+                    // we update the type map
+                    typeMap[this.name] = commonType;
+                }
+            }
+        }
+        else {
+            typeMap[this.name] = originalType;
+        }
+    }
+}
+```
+
+Now the method has a different behavior that calling the same method on all its subfields! Since it is a terminal it needs to check a few conditions:
+- Is the generic present in the declared generics? If not, it is an error.
+- Is the generic already in the type map? If so, we need to make sure the type matches the constraint (if applicable)
+- If the generic is not in the type map, we add it to the type map.
+- If the generic is in the type map, we need to compare the existing type and the new one
+    - If the types match exactly, we are good
+    - If the types do not match, we find a common type and override the type map with the common type.
+        - If the common type does not match the constraint, it is an error.
+        - If the common type matches the constraint, we are good.
+
+Now that's a lot of rules. But it is necessary to make sure the generic types are used correctly. This is the core of the type system in the compiler.
+
+## Coroutines and Closures
+```tc
+    fn toIterator() {
+        let iterator = cfn() -> (T, bool) {
+            let counter: u64 = 0
+
+            for let i: u64 = 0; i < this.len-1; i = i + 1 {
+                let value = this.data[i]
+                yield (value, false)
+            }
+
+            let value = this.data[this.len-1]
+            yield! (value, true)
+        }
+
+        return coroutine iterator
+    }
+```
+
+This function is our main focus! As it does two things in one line:
+`return coroutine iterator` first of all, just the mention of `iterator` as reference to a function creates a closure. Then based on this closure, it creates a coroutine.
+
+You start to see a bit of how the VM functions here, coroutine expects a closure and they work hand-in-hand pretty well, because for a closure, the upvalues will need to be backedup after it returns,
+but coroutines already persist the registers.
+
+Let's have a look at an example using this:
+
+```tc
+from std.io import println
+from std.array import Array
+
+
+fn main() {
+    let x: Array<u32> = new Array<u32>([1, 2, 3, 4, 5])
+
+    let iter = x.toIterator()
+
+    let e: u32 = 0
+    let end: bool = false
+
+    while !end {
+        (e, end) = iter()
+        println("Element: " + e)
+    }
+
+    return 0
+}
+```
+
+This code will print (with non-sense removed):
+```bash
+Element: 1
+Element: 2
+Element: 3
+Element: 4
+Element: 5
+```
+
+Let's explore the IR of this method:
+
+
+<img src="/images/tc-awesome/ir.png" alt="Vector" />
+
+Type-C IR is a bit different from regular IR, it assumes infinite disposable registers (with `destroy_tmp`), and assumes reference assignment for everything.
+
+So for example:
+```
+tmp_ptr tmp_1 arg x
+tmp_ptr tmp_1 tmp tmp_2
+```
+It means `tmp_1` references local argument `x` and then assigned `tmp_2`, essentially updating `x` since all values have to go through registers first.
+
+Now let's get back on track.
+
+In Type-V, closure env are passed as arguments, right after the regular function arguments, in our case, `cfn` takes 0 arguments. So the closure env is passed as the first argument.
+
+```
+closure_alloc tmp_1068 0 1 ; allocates a closure with 1 upvalue passed as arg from offset 0
+
+tmp_ptr tmp_1070 arg $this ; assigns $this argument, which is a hidden argument for the method to the tmp_1070 register
+closure_push_env_ptr tmp_1068 tmp_1070 ; pushes the $this argument to the closure env as a pointer
+
+tmp_ptr tmp_1073 local ctx_199_iterator_0; loads local variable iterator to tmp_1073
+coroutine_alloc tmp_1072 tmp_1073; allocates a coroutine with the closure env
+
+tmp_ptr tmp_1071 local ctx_199_iterator_0 ; loads local variable iterator to tmp_1071
+tmp_ptr tmp_1071 reg tmp_1068 ; assigns the closure env to the iterator
+
+tmp_ptr tmp_1073 local ctx_199_iterator_0; load local variable iterator to tmp_1073
+coroutine_alloc tmp_1072 tmp_1073 ; allocates a coroutine with the closure tmp_1073 into tmp_1072
+
+ret_ptr tmp_1072 0; return the coroutine
+ret_void ; jump back to caller
+```
+
+Sadly the graph plot of main is not as nice as it has jumps and all.
+
+If you want to look into it yourself, compile with `--generate-ir` flag and you will see `dot` files in the output directory you provided to the compiler.
