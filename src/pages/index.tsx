@@ -1,113 +1,69 @@
 import React from 'react';
-import fs from 'fs';
-import path from 'path';
-import { useRouter } from 'next/router';
-import matter from 'gray-matter';
-import { GiEvilMoon } from 'react-icons/gi';
 import Head from 'next/head';
+import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { FaGithub, FaLinkedin, FaYoutube } from 'react-icons/fa';
 
-export type BlogPost = {
-    name: string,
-    title: string
-    date: string,
-    published: boolean,
-    tags: string[],
-    excerpt: string
-};
+const MoonScene = dynamic(() => import('../components/MoonScene'), { ssr: false });
 
-interface Posts {
-    blogPosts: BlogPost[];
-}
+const YOUTUBE_URL = 'https://www.youtube.com/@moon-writes-code';
 
-const BlogPosts: React.FC<{ posts: BlogPost[] }> = ({ posts }) => {
-    const router = useRouter()
-
-    return (
-
-        <div>
-            <Head>
-                <title>praisethemoon&apos;s blog</title>
-            </Head>
-            <div className="striped1 hero bg-base-100 py-20">
-                <div>
-                    <div className="hero-content text-center">
-                        <div className="gap-x-40 text-center flex flex-col">
-                            <p className="text-3xl">Hi.</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div className="hero bg-base-100">
-                <div className="py-20 w-700">
-                    <div className="prose lg:prose-md m-auto">
-                        {posts.map((post) => (
-                            <>
-                                <div id={post.name} className='p-5 hover:bg-base-200 cursor-pointer' onClick={() => router.push(`/blog/${post.name}`)}>
-                                    <h1 key={post.name}>{post.title}</h1>
-                                    <small>{post.date}</small>
-                                    <p>{post.excerpt}</p>
-                                    {post.tags.map((tag) => (
-                                        <div key={tag} className="badge badge-neutral mx-2">{tag}</div>
-                                    ))}
-                                </div>
-                                <hr />
-                            </>
-                        ))}
-                    </div>
-                </div>
-            </div>
+const Landing: React.FC = () => {
+  return (
+    <>
+      <Head>
+        <title>praisethemoon</title>
+        <meta name="description" content="moon — a quiet hill, a louder sky." />
+      </Head>
+      <div className="relative w-full min-h-screen h-screen overflow-hidden bg-moon-deep">
+        <MoonScene />
+        <div className="relative z-10 flex flex-col items-center justify-center h-screen px-6 text-center">
+          <h1 className="font-pixel text-moon-glow text-7xl md:text-9xl drop-shadow-[0_0_18px_rgba(255,248,214,0.25)] leading-none">
+            praisethemoon
+          </h1>
+          <p className="mt-2 font-pixel text-moon-mist text-2xl md:text-3xl">
+            — call me moon —
+          </p>
+          <p className="mt-6 max-w-xl text-moon-silver/80 text-base md:text-lg">
+            I am busy creating things, so feel free to look around.
+          </p>
+          <nav className="mt-10 flex flex-wrap items-center justify-center gap-3 md:gap-4">
+            <Link href="/blog" className="btn-pixel">Blog</Link>
+            <Link href="/projects" className="btn-pixel">Projects</Link>
+            <Link href="/about" className="btn-pixel">About</Link>
+            <a href="mailto:doit@praisethemoon.org" className="btn-pixel">Contact</a>
+            <a
+              href="https://github.com/praisethemoon"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              className="btn-pixel !px-3"
+            >
+              <FaGithub size={20} />
+            </a>
+            <a
+              href="https://linkedin.com/in/praisethemoon"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="LinkedIn"
+              className="btn-pixel !px-3"
+            >
+              <FaLinkedin size={20} />
+            </a>
+            <a
+              href={YOUTUBE_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="YouTube"
+              className="btn-pixel !px-3"
+            >
+              <FaYoutube size={20} />
+            </a>
+          </nav>
         </div>
-
-    );
+      </div>
+    </>
+  );
 };
 
-export async function getStaticProps() {
-    // Path to the _meta.json file
-    const postsDirectory = path.join(process.cwd(), 'posts');
-
-
-    let filenames = fs.readdirSync(path.join(process.cwd(), 'posts'));
-
-    const posts = filenames.filter(filename => /\.mdx?$/.test(filename)).map(filename => {
-        // Define the full path to the file
-        const filePath = path.join(postsDirectory, filename);
-        // Read the file contents as a string
-        const fileContents = fs.readFileSync(filePath, 'utf8');
-        // Use gray-matter to parse the post metadata section
-        const { data, content } = matter(fileContents);
-
-
-        // Extract excerpt
-        let excerpt = "";
-        const excerptSeparator = "{/* excerpt */}";
-        if (content.includes(excerptSeparator)) {
-            excerpt = content.split(excerptSeparator)[0];
-        }
-
-        // Add the file name (without extension) as the name property
-        return {
-            name: filename.replace(/\.mdx?$/, ''),
-            ...data,
-            excerpt
-        }
-    });
-
-    // sort by date
-    posts.sort((a, b) => {
-        // @ts-ignore
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
-
-
-
-    // Return the list of posts as props
-    return {
-        props: {
-            posts,
-        },
-    };
-}
-
-export default BlogPosts;
+export default Landing;

@@ -1,55 +1,80 @@
 import React from 'react';
-import getUnicodeFlagIcon from 'country-flag-icons/unicode'
 import Head from 'next/head';
-import Image from 'next/image';
+import HeroBanner from '@/components/HeroBanner';
+
+type Section = {
+  cmd: string;
+  body: React.ReactNode;
+};
+
+const sections: Section[] = [
+  {
+    cmd: 'whoami',
+    body: (
+      <>
+        <p>I&apos;m Soulaymen Chouri.</p>
+        <p className="mt-4">
+          Online, I go by{' '}
+          <span className="font-pixel text-moon-glow text-xl">praisethemoon</span>{' '}
+          — most people just call me{' '}
+          <span className="font-pixel text-moon-glow text-xl">moon</span>.
+        </p>
+      </>
+    ),
+  },
+  {
+    cmd: 'whatdoido',
+    body: (
+      <p>
+        I&apos;m a software engineer. Most of my time goes into learning, coding
+        random (or not so random) things. I have an obsession with performance
+        for some reason, and I like to push things to their limits.
+      </p>
+    ),
+  },
+  {
+    cmd: 'whereami',
+    body: (
+      <p>
+        I grew up in Tunisia, where I studied and graduated. I now live and work
+        in Germany.
+      </p>
+    ),
+  },
+  {
+    cmd: 'whymoon',
+    body: (
+      <p>
+        Dark Souls fan.
+      </p>
+    ),
+  },
+];
 
 const About: React.FC = () => {
-    return (
-        <div>
-        <Head>
-            <title>Who is praisethemoon?</title>
-        </Head>
-            <div className="hero bg-base-100 py-20 bg-cover bg-center bg-no-repeat min-h-[400px]" style={{backgroundImage: "url('/images/gris-bg.jpeg')"}}>
-                <div>
-                    <div className="hero-content text-center text-white">
-                        <div className="gap-x-40">
-                            <p className="text-5xl">About</p>
-                        </div>
-                    </div>
+  return (
+    <div className="starfield-bg min-h-[calc(100vh-4rem)]">
+      <Head>
+        <title>About</title>
+      </Head>
 
-                </div>
+      <HeroBanner title="About" subtitle="who is moon?" />
 
+      <article className="max-w-2xl mx-auto px-6 pt-16 pb-24 text-moon-silver/90 text-lg leading-relaxed">
+        {sections.map((s, i) => (
+          <section key={s.cmd} className={i === 0 ? '' : 'mt-12'}>
+            <h2 className="font-pixel text-2xl md:text-3xl mb-3 select-none">
+              <span className="text-moon-mist mr-2">$</span>
+              <span className="text-moon-glow">{s.cmd}</span>
+            </h2>
+            <div className="border-l border-moon-silver/15 pl-4">
+              {s.body}
             </div>
-
-            {/*<div className="hero bg-base-100">*/}
-
-            <div className="flex flex-1">
-                <div className='hero bg-base-200 py-20 w-200'>
-                    <div className="card card-side bg-base-100 shadow-xl">
-                        <figure><Image src="/images/me.png" alt="Movie" width={200} height={200}/></figure>
-                        <div className="card-body max-w-xl">
-                            <h2 className="card-title">About:</h2>
-                            <p>Hi! My name is Soulaymen Chouri, I am a Software Engineer and Data Scientist, my projects vary from Data Science, Software Engineering, Programming Language, Fullstack development, Video Game Development and more.
-                                I am from {getUnicodeFlagIcon('TN')} where I was raised and studied, and now I live and work in {getUnicodeFlagIcon('DE')}.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className='hero bg-base-100 py-5 w-200'>
-                <div className="mt-10">
-                    {/* Experience Section */}
-                    <div className="mb-5">
-                        <h2 className="text-3xl font-bold">Fun Facts</h2>
-                        <ul className="list-disc list-inside">
-                            <li className="mb-2">I am a huge fan of Gris, the video game, the image in the banner of this page is a Gris screenshot.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+          </section>
+        ))}
+      </article>
+    </div>
+  );
 };
 
 export default About;

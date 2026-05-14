@@ -12,6 +12,7 @@ import matter from 'gray-matter';
 import GistEmbed from '@/components/GistEmbed';
 import remarkGfm from 'remark-gfm';
 import Head from 'next/head'
+import HeroBanner from '@/components/HeroBanner';
 
 
 // Define the path to your posts directory
@@ -27,7 +28,7 @@ const UtterancesComments = () => {
         src: 'https://utteranc.es/client.js',
         repo: 'praisethemoon/blog',
         'issue-term': 'pathname',
-        theme: 'github-light',
+        theme: 'photon-dark',
         crossOrigin: 'anonymous',
         defer: true,
       };
@@ -85,61 +86,53 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 const PostPage = ({ source, meta }: any) => {
     return (
-        <div>
+        <div className="starfield-bg">
             <Head>
                 <title>{meta.title}</title>
             </Head>
-            <div className="striped1 hero bg-base-100 py-20">
-                <div>
-                    <div className="hero-content text-center">
-                        <div className="gap-x-40 text-center flex flex-col text-center  items-center">
-                            <p className="text-5xl">{meta.title}</p>
-                            <p className='m-1'>{meta.date}</p>
-                            <div className="flex flex-row gap-x-2">
-                                {meta.tags.map((tag: string) => (
-                                    <div key={tag} className="badge badge-neutral">{tag}</div>
-                                ))}
-                            </div>
-                            <div className="text-sm breadcrumbs">
-                                <ul>
-                                    <li>
-                                        <Link href="/">
-                                            <FaRegNewspaper className='mx-2' /> praisetheblog
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <a>
-                                            <HiOutlineDocumentText className='mx-2' />{meta.title}
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-            </div>
-
-            <div className="hero bg-base-100">
-                <div className="py-40 w-700">
-                    <div className="prose lg:prose-md m-auto">
-                        <MDXRemote {...source} components={{GistEmbed, ...MDXComponents}} />
+            <HeroBanner title={meta.title} subtitle={meta.date}>
+                {meta.tags && meta.tags.length > 0 && (
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        {meta.tags.map((tag: string) => (
+                            <span key={tag} className="font-pixel text-sm px-2 py-0.5 border border-moon-silver/30 text-moon-mist bg-moon-deep/40 backdrop-blur-sm">
+                                {tag}
+                            </span>
+                        ))}
                     </div>
-                </div>
-            </div>
+                )}
+                <nav className="mt-4 font-pixel text-base text-moon-mist flex items-center justify-center gap-2">
+                    <Link href="/blog" className="hover:text-moon-glow inline-flex items-center gap-1">
+                        <FaRegNewspaper /> blog
+                    </Link>
+                    <span>/</span>
+                    <span className="inline-flex items-center gap-1 text-moon-silver">
+                        <HiOutlineDocumentText /> {meta.title}
+                    </span>
+                </nav>
+            </HeroBanner>
 
-            <div className='bg-base-200 min-h-[400px]'>
-                <UtterancesComments/>
-            </div>
-            <div className="striped1 hero bg-base-100 py-20">
-                <div className="py-1 w-700">
-                    <div className='prose lg:prose-md m-auto b-1'>
-                        <p>Articles written in this blog are my own opinions and do not reflect the views of my employer. Content on this website is original unless mentioned otherwise. Original content is licensed under a CC BY 4.0 Deed. Some of the content might have been preprocessed by AI for clarity and articulation.</p>
-                    </div>
+            <article className="max-w-3xl mx-auto px-6 pt-12 pb-24">
+                <div className="prose prose-invert lg:prose-md mx-auto">
+                    <MDXRemote {...source} components={{ GistEmbed, ...MDXComponents }} />
                 </div>
-            </div>
+            </article>
+
+            <section className="border-t border-moon-silver/10 bg-moon-night/40 py-12 px-6">
+                <div className="max-w-3xl mx-auto">
+                    <UtterancesComments />
+                </div>
+            </section>
+
+            <section className="py-10 px-6 text-center">
+                <p className="max-w-3xl mx-auto text-sm text-moon-mist/80">
+                    Articles written in this blog are my own opinions and do not reflect the views of my employer.
+                    Content is original unless stated otherwise, and licensed CC BY 4.0. Some passages may be
+                    AI-polished for clarity.
+                </p>
+            </section>
         </div>
-    )
+    );
 };
 
 export default PostPage;

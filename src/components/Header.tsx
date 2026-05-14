@@ -1,68 +1,108 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useEffect } from 'react';
-import { BsCodeSquare } from 'react-icons/bs';
-import { CiCircleMore, CiStickyNote } from 'react-icons/ci';
-import { FaBalanceScale, FaBook, FaDiscord, FaDownload, FaGithub, FaHome, FaLinkedin, FaQuestionCircle, FaRegNewspaper, FaUniversity } from "react-icons/fa";
-import { GiEvilMoon, GiMaterialsScience, GiMoon, GiSecretBook, GiSpellBook } from 'react-icons/gi';
-import { HiUserGroup } from 'react-icons/hi';
-import { IoPeopleCircleOutline } from 'react-icons/io5';
-import { LuPackageSearch } from 'react-icons/lu';
-import { SiAwesomelists } from 'react-icons/si';
-import { TbLicense, TbPackages } from 'react-icons/tb';
+import React from 'react';
+import { FaGithub, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import { GiEvilMoon } from 'react-icons/gi';
+
+const YOUTUBE_URL = 'https://www.youtube.com/@moon-writes-code';
+
+const navItems: { label: string; href: string }[] = [
+  { label: 'About', href: '/about' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Projects', href: '/projects' },
+];
 
 const Header: React.FC = () => {
-    const router = useRouter();
+  const router = useRouter();
+  if (router.pathname === '/' || router.pathname === '/404') return null;
 
-    useEffect(() => {
-        // Function to close all <details> elements
-        const closeAllDetails = () => {
-            document.querySelectorAll('#header-menu details[open]').forEach((detailsElement) => {
-                detailsElement.removeAttribute('open');
-            });
-        };
+  return (
+    <header
+      className="absolute md:fixed top-0 left-0 right-0 z-30 w-full bg-moon-deep/80 backdrop-blur border-b border-moon-silver/10"
+    >
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 h-16">
+        <Link
+          href="/"
+          aria-label="praisethemoon — home"
+          className="text-moon-glow hover:text-white transition-colors text-3xl"
+        >
+          <GiEvilMoon />
+        </Link>
 
-        // Close all <details> elements upon route changes
-        router.events.on('routeChangeComplete', closeAllDetails);
+        <nav className="hidden md:flex items-center gap-1">
+          {navItems.map((item) => {
+            const active = router.pathname === item.href || router.pathname.startsWith(item.href + '/');
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`font-pixel text-xl px-3 py-1 transition-colors ${
+                  active ? 'text-moon-glow' : 'text-moon-silver/80 hover:text-moon-glow'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+          <a
+            href="mailto:doit@praisethemoon.org"
+            className="font-pixel text-xl px-3 py-1 text-moon-silver/80 hover:text-moon-glow transition-colors"
+          >
+            Contact
+          </a>
+        </nav>
 
-        // Cleanup listener when component unmounts
-        return () => {
-            router.events.off('routeChangeComplete', closeAllDetails);
-        };
-    }, [router.events]);
-
-    return (
-        <div className="navbar bg-base-100 w-full z-50" id="header-menu">
-            <div className="navbar-start">
-                <div className="dropdown">
-                    <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
-                    </div>
-                    <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                        <li><Link href={'/'}><FaRegNewspaper size={20} /> Blog</Link></li>
-                        <li><Link href={'/research'}><GiMaterialsScience size={20}/> Publications</Link></li>
-                        <li><Link href={'/about'}><GiMoon size={20}/> About</Link></li>
-                        <li><Link href={'https://typec.praisethemoon.org'} className='logoFont'>Type-C</Link></li>
-                        <li><Link href={'https://moonpiano.io'} className=''>MoonPiano</Link></li>
-                    </ul>
-                </div>
-                <Link className="btn btn-ghost text-xl dancing-script-moon" href='/'><GiEvilMoon/></Link>
-            </div>
-            <div className="navbar-center hidden lg:flex">
-                <ul className="menu menu-horizontal menu-hover px-1">
-                    <li><Link href={'/'}><FaRegNewspaper size={20} /> Blog</Link></li>
-                    <li><Link href={'/research'}><GiMaterialsScience size={20}/> Publications</Link></li>
-                    <li><Link href={'/about'}><GiMoon size={20}/> About</Link></li>
-                    <li><Link href={'https://typec.praisethemoon.org'} className='logoFont'>Type-C</Link></li>
-                    <li><Link href={'https://moonpiano.io'} className='font-bold font-italic '>MoonPiano</Link></li>
-                </ul>
-            </div>
-            <div className="navbar-end">
-                <Link className="btn btn-ghost" href="https://linkedin.com/in/praisethemoon"><FaLinkedin size={24} /></Link>
-                <Link className="btn btn-ghost" href="https://github.com/praisethemoon"><FaGithub size={24} /></Link>
-            </div>
+        <div className="flex items-center gap-1">
+          <a
+            href="https://github.com/praisethemoon"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="GitHub"
+            className="p-2 text-moon-silver/80 hover:text-moon-glow transition-colors"
+          >
+            <FaGithub size={20} />
+          </a>
+          <a
+            href="https://linkedin.com/in/praisethemoon"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="LinkedIn"
+            className="p-2 text-moon-silver/80 hover:text-moon-glow transition-colors"
+          >
+            <FaLinkedin size={20} />
+          </a>
+          <a
+            href={YOUTUBE_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="YouTube"
+            className="p-2 text-moon-silver/80 hover:text-moon-glow transition-colors"
+          >
+            <FaYoutube size={20} />
+          </a>
         </div>
-    );
+      </div>
+
+      {/* Mobile nav row */}
+      <nav className="md:hidden flex items-center justify-center gap-2 pb-2 px-2">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="font-pixel text-base px-2 py-1 text-moon-silver/80 hover:text-moon-glow"
+          >
+            {item.label}
+          </Link>
+        ))}
+        <a
+          href="mailto:doit@praisethemoon.org"
+          className="font-pixel text-base px-2 py-1 text-moon-silver/80 hover:text-moon-glow"
+        >
+          Contact
+        </a>
+      </nav>
+    </header>
+  );
 };
 
 export default Header;
