@@ -74,7 +74,7 @@ jobs:
         with:
           username: ${{ secrets.REMOTE_USER }}
           server: ${{ secrets.REMOTE_HOST }}
-          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PRIVATE_KEY }}
           local_path: './out/*'
           remote_path: '/home/praisethio/www'
           sftp_only: true
